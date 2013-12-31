@@ -1,0 +1,13 @@
+# les transitions du fsm
+# coin = 0, selection = 1, brew = 2
+
+# syntaxe :
+# source destination nom
+
+# s1 vers s2
+0,1, insert coin
+1,2, make selection
+2,2, brewing
+2,0, give change
+1,0, abort
+
