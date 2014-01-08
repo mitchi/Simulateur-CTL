@@ -1,8 +1,12 @@
 #description des différents etats
-#id, nom, variables
+#variables : x,y,z
+#http://www.inf.ed.ac.uk/teaching/courses/propm/papers/CTL.pdf
 
-#variables : coin, selection,brew
-
-1, S1, {0,0,0}
-2, S2, {1,0,0}
-3, S3, {1,1,1}
+0, S0, {1,1,1}
+1, S1, {1,1,0}
+2, S2, {0,1,1}
+3, S3, {1,0,0}
+4, S4, {0,1,0}
+5, S5, {1,0,1}
+6, S6, {0,0,1}
+7, S7, {0,0,0}

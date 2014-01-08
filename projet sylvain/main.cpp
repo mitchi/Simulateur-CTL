@@ -6,6 +6,9 @@
 #include <string>
 using namespace std;
 
+//Composantes fortement connexes
+//Voir cet algorithme la
+
 //Tuple pour mettre a jour la valeur d'une variable avec la transition
 //struct modification
 //{
@@ -179,7 +182,7 @@ void readStates(char * filename)
 		pc = line;
 
 		int r1 = readIntegerBeforeComma(pc);
-		if (r1 == 0) exit(1); //generate error here
+		if (r1 == -1) exit(1); //generate error here
 		else newState.id = r1;
 
 		string r2 = readStringBeforeComma(pc);
@@ -187,7 +190,7 @@ void readStates(char * filename)
 		else newState.name = r2;
 
 		int r3 = readVariables(pc, newState);
-		if (r3 == 0) exit(1);
+		if (r3 == -1) exit(1);
 
 		//Push the state into the FSM
 		fsm.push_back(newState);
@@ -253,7 +256,7 @@ void readTransitions(char * filename)
 		if (destination == -1) exit(1);
 
 		string name = readTransitionName(pc);
-		if (name == "") exit(1);
+		//if (name == "") exit(1);
 
 		newTransition.sourceid = source;
 		newTransition.destinationid = destination;
@@ -268,6 +271,137 @@ void readTransitions(char * filename)
 }
 
 
+
+/*
+
+Fonction de recherche
+
+#1. On cherche et tag tous les états qui satisfont les variables de base.
+
+#2. On implémente le premier niveau de CTL
+
+#3. 2ème niveau de CTL.
+
+
+Résultat = un vecteur d'états.
+
+
+
+
+*/
+
+//Retourne un vecteur avec tous les états matchés (simple vérification de variables, comme dans l'exemple).
+vector<int> matchVariables(vector<int> recherche )
+{
+
+	vector<int>resultats;
+	resultats.resize(8);
+	for (int i=0; i < resultats.size(); i++) resultats[i]=0; //Initialisation (peut etre non nécessaire?
+
+	//On parcoure tous les états au moins une fois
+	for (int i = 0; i < fsm.size(); i++)
+	{
+		//On check si ya un match avec la formule en logique propositionnelle (juste une comparaison de vecteurs).
+		for (int j = 0; j < fsm[i].variables.size() ; j++)
+		{
+			//Si on cherche cette variable
+			if (recherche[j] == 1) {
+				//Est-elle non-presente dans cet etat? Si elle n'est pas presente, on change d'etat
+				if (fsm[i].variables[j] != 1) {
+					goto nonPresente;
+				}
+			}
+		}
+
+		//La variable est presente dans l'etat:
+		resultats[i] = 1;
+
+		//Non presente, on continue au prochain état
+		nonPresente: ;
+
+	}
+
+
+	return resultats;
+
+}
+
+
+//Cette fonction recursive prend en parametre un etat initial et trouve si les transitions partant de cet état
+//satisfont toutes (x).
+
+//Peut utiliser le même tableau global pour faire la fonction a mémoire ou alors on passe le tableau en paramètre a la fonction
+//Comme ça aucun side effects...
+
+bool all_paths_satisfy(int stateId, vector<int> & satisfy_x)
+{
+
+	//Pour toutes les transitions de cet état
+	for (int i=0; i< fsm[stateId].transitions.size(); i++)
+	{
+		int nextState = fsm[stateId].transitions[i].destinationid;
+		//Si le prochain état est un etat invalide, return false
+		if (satisfy_x[nextState] == 0)
+		{
+			return false;
+		}
+
+		//Si le prochain état est un état déja visité, on continue a la prochaine transition
+		if (satisfy_x[nextState] == 2)
+		{
+			continue;
+		}
+
+		//Si le prochain état est valide et non visité, on fait un appel récursif
+		if (satisfy_x[nextState] == 1)
+		{
+			bool answer = all_paths_satisfy(nextState, satisfy_x);
+			if (answer == true) return true;
+			if (answer == false) return false;
+		}
+	}
+
+	//Si on a parcouru toutes les transitions de l'état sans atterir dans un état invalide, on peut retourner true
+	return true;
+}
+
+
+//Cette fonction fait le travail "All paths, globally x"
+//Prend en paramètre les états acceptants X. La fonction retourne en résultats les états qui valident la propriété
+//All paths, globally x.
+//Input : Table de taille n. Si l'état est présent, 1, sinon 0
+//Output : Table de taille n. Si l'état est présent 1, sinon 0
+vector<int> AG(vector<int> startingStates)
+{
+
+	vector<int> results;
+	vector<int> satisfy_x;
+
+	satisfy_x.resize(fsm.size() );
+
+	//On crée le vecteur satisfy_x
+	for (int i = 0; i < startingStates.size(); i++)
+	{
+		int state = startingStates[i];
+		satisfy_x[state] == 1;
+	}
+
+	//On itère a travers tous les états qui acceptent x.
+	for (int i =0; i<startingStates.size(); i++)
+	{
+
+		int currentState = startingStates[i];
+		bool answer = all_paths_satisfy(currentState,satisfy_x);
+		
+		if (answer == true)
+			results.push_back(currentState);
+
+	}
+
+	return results;
+
+}
+
 int main(void)
 {
 
@@ -275,10 +409,24 @@ int main(void)
 	readStates("states.txt");
 
 	readTransitions("transitions.txt");
+ 
+	//On veut vérifier la propriété AF AG x sur la FSM
+	
+	//#1 Matcher les états en fonction de la valuation des variables. Ici on cherche x.
+	//Si n états et m variables, prend un temps O(n*m)
+	vector<int> recherche;
+	recherche.resize(3);
 
+	recherche[0] = 1;
+	recherche[1] = 0;
+	recherche[2] = 0;
+
+	vector<int> res = matchVariables(recherche);
 
 
 	return 0;
 
 
 }
+
+
