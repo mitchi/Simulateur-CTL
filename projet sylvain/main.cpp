@@ -6,270 +6,9 @@
 #include <string>
 using namespace std;
 
-//Composantes fortement connexes
-//Voir cet algorithme la
-
-//Tuple pour mettre a jour la valeur d'une variable avec la transition
-//struct modification
-//{
-//	int variableid;
-//	bool value;
-//};
-
-
-struct transition
-{
-	string name; //nom de la transition (insert coin)
-	int sourceid, destinationid;
-	//vector <modification> changes; //This vector is used to change the state's variables
-};
-
-struct state
-{
-	int id; //id du state
-	string name; //nom de l'état (S1)
-	vector <int> variables; //AP, propositions atomiques avec la valuation des variables
-	vector <transition> transitions; //transitions partant de ce vecteur
-
-};
-
-
-
+#include "includes.h"
 
 vector<state> fsm;
-
-
-//Essayer de le faire avec sprintf ?
-
-
-int readIntegerBeforeComma(char  * &  pc)
-{
-
-	char buffer[200];
-	memset(buffer, 0, 200);
-	int i = 0;
-		
-	while (1)
-	{
-		//test#1, fin de la string
-		if (*pc == 0) return -1;
-
-		//test#2, la virgule
-		if (*pc == ',') break;
-
-		//skip whitespace
-		if (*pc == ' ') 
-		{
-			pc++;	
-			continue;
-		}
-
-		//On enregistre dans buffer
-		buffer[i++] = *pc;
-		pc++;
-
-
-
-	}
-	//On va pointer apres la virgule
-	pc++;
-	int value = atoi(buffer);
-	return value;
-
-}
-
-
-string readStringBeforeComma(char * & pc)
-{
-
-	char buffer[200];
-	memset(buffer, 0, 200);
-	int i = 0;
-		
-	while (1)
-	{
-		//test#1, fin de la string
-		if (*pc == 0) return 0;
-
-		//test#2, la virgule
-		if (*pc == ',') break;
-
-		//On enregistre dans buffer
-		buffer[i++] = *pc;
-		pc++;
-	}
-
-	//On va pointer apres la virgule
-	pc++;
-	string value = buffer;
-	return value;
-
-}
-
-
-int readVariables(char * & pc, state & newState)
-{
-
-	//Match opening bracket
-	while (1)
-	{
-		//check for end of string
-		if (*pc == 0) return 0;
-
-		if (*pc == '{' ) {
-			pc++;
-			break;
-		}
-
-		pc++;
-	}
-
-	//Match variables, add them to the vector one by one. Stop when } is found
-
-	while (1)
-	{
-		//End of string, error
-		if (*pc == 0) return 0;
-
-		else if (*pc == '1')
-		{
-			newState.variables.push_back(1);
-			pc++;
-		}
-
-		else if (*pc == '0')
-		{
-			newState.variables.push_back(0);
-			pc++;
-		}
-
-		//Good exit
-		else if (*pc == '}' )
-		{
-			break;
-		}
-
-		//Normal continuation
-		else pc++;
-
-	}
-
-	return 1;
-}
-
-
-
-void readStates(char * filename)
-{
-
-	FILE * fichier = fopen(filename, "r");
-	static char line[200];
-
-	char * pc; //iterator
-
-	while (fgets(line, 200, fichier) != NULL) 
-	{
-
-		//Commentary, skip
-		if (line[0] == '#') continue;
-
-		//Empty line, skip
-		if (line[0] == 10) continue;
-
-		//Read the state
-		state newState; //create a new empty state
-
-		pc = line;
-
-		int r1 = readIntegerBeforeComma(pc);
-		if (r1 == -1) exit(1); //generate error here
-		else newState.id = r1;
-
-		string r2 = readStringBeforeComma(pc);
-		if (r2 == "") exit(1);
-		else newState.name = r2;
-
-		int r3 = readVariables(pc, newState);
-		if (r3 == -1) exit(1);
-
-		//Push the state into the FSM
-		fsm.push_back(newState);
-
-	}
-
-
-
-}
-
-string readTransitionName(char * & pc)
-{
-	static char name[200];
-	memset(name, 0, 200); //probably not necessary/fast but it removes potential future bugs!
-	int i = 0;
-
-	while (1)
-	{
-		//EOF?
-		if (*pc == NULL) break;
-
-		//Linefeed, CR (possibly a problem with Linux created files here,or not)
-		if (*pc == 10 || *pc == 13) break;
-		
-		//Add it to this
-		name[i++] = *pc;
-
-		pc++;
-	}
-
-	return name;
-
-}
-
-
-
-//This function reads the file that contains the transitions 
-void readTransitions(char * filename)
-{
-
-	FILE * fichier = fopen(filename, "r");
-	static char line[200];
-
-	char * pc; //iterator
-
-	while (fgets(line, 200, fichier) != NULL) 
-	{
-
-		transition newTransition;
-
-		//Commentary, skip
-		if (line[0] == '#') continue;
-
-		//Empty line, skip
-		if (line[0] == 10) continue;
-
-		pc = line;
-
-		int source = readIntegerBeforeComma(pc);
-		if (source == -1) exit(1); //generate error here
-
-		int destination = readIntegerBeforeComma(pc);
-		if (destination == -1) exit(1);
-
-		string name = readTransitionName(pc);
-		//if (name == "") exit(1);
-
-		newTransition.sourceid = source;
-		newTransition.destinationid = destination;
-		newTransition.name = name;
-
-		//Add the transition to the FSM
-		fsm[source].transitions.push_back(newTransition);
-
-		//Les transtions sont one way, donc c'est tout ce qu'on fait.
-	}
-
-}
-
 
 
 /*
@@ -290,13 +29,29 @@ Résultat = un vecteur d'états.
 
 */
 
-//Retourne un vecteur avec tous les états matchés (simple vérification de variables, comme dans l'exemple).
+//This utility function takes a vector of results and outputs an array for dynamic programming
+//The states that accept are tagged properly according to the enum (1 = accept)
+vector<int> make_dp_array_from_results(vector<int> results)
+{
+	vector<int> memory;
+	memory.resize(fsm.size() );
+
+	for (int i=0; i<results.size(); i++)
+	{
+		int state = results[i];
+		memory[i] = VALID;
+	}
+
+	return memory;
+}
+
+//Retourne un vecteur avec tous les états matchés par la formule en logique propositionnelle (simple vérification de variables, comme dans l'exemple).
 vector<int> matchVariables(vector<int> recherche )
 {
 
 	vector<int>resultats;
-	resultats.resize(8);
-	for (int i=0; i < resultats.size(); i++) resultats[i]=0; //Initialisation (peut etre non nécessaire?
+	//resultats.resize(8);
+	//for (int i=0; i < resultats.size(); i++) resultats[i]=0; //Initialisation (peut etre non nécessaire?
 
 	//On parcoure tous les états au moins une fois
 	for (int i = 0; i < fsm.size(); i++)
@@ -314,7 +69,7 @@ vector<int> matchVariables(vector<int> recherche )
 		}
 
 		//La variable est presente dans l'etat:
-		resultats[i] = 1;
+		resultats.push_back(i);
 
 		//Non presente, on continue au prochain état
 		nonPresente: ;
@@ -326,6 +81,91 @@ vector<int> matchVariables(vector<int> recherche )
 
 }
 
+enum AF_enum
+{
+	AF_UNKNOWN = 0,
+	AF_ACCEPT = 1,
+	AF_INVALID = 2,
+	AF_VISITED = 3,
+};
+
+//Recursive function
+bool all_paths_finally_satisfy(int stateId, vector<int> & memory)
+{
+	
+	if (memory[stateId] == AF_ACCEPT)
+		return true;
+
+	if (memory[stateId] == AF_INVALID)
+		return false;
+
+	if (memory[stateId] == AF_VISITED)
+		return false;
+
+	//On marque ce state comme visited, pour pas revenir 2 fois dessus avec la recursivite
+	memory[stateId] = AF_VISITED;
+
+	//Pour toutes les transitions de cet etat
+	for (int i =0; i < fsm[stateId].transitions.size(); i++)
+	{
+
+		int nextState = fsm[stateId].transitions[i].destinationid;
+		
+		bool answer = all_paths_finally_satisfy(nextState, memory);
+		if (answer == false) return false; //on sort de cette branche immédiatement si le parcours récursif trouve une réponse fausse
+
+	}
+
+	//Si tous les chemins ont fini par être valide, on se retrouve ici
+	memory[stateId] = AF_ACCEPT;
+	return true;
+
+
+}
+
+
+
+vector<int> AF(vector<int> states)
+{
+
+	vector<int> memory;
+	vector<int> results;
+	memory.resize(fsm.size() );
+
+	//Let's start with the array for the DP recursive function
+	//We tag our accepting states in the memory
+	for (int i =0; i < states.size() ; i++) 
+	{
+		int state = states[i];
+		memory[state] = AF_ACCEPT;
+	}
+
+	for (int i = 0; i < memory.size(); i++)
+	{
+
+		//Les states deja calculés, add aux resultats
+		if (memory[i] == AF_ACCEPT) {
+			results.push_back(i);
+			continue;
+		}
+
+		if (memory[i] == AF_INVALID)
+			continue;
+
+		bool answer = all_paths_finally_satisfy(i, memory);
+
+		if (answer == false)
+			memory[i] = AF_INVALID;
+
+		else if (answer == true) {
+			//Add this state to the results
+			results.push_back(i);
+		}
+	}
+
+	return results;
+}
+
 
 //Cette fonction recursive prend en parametre un etat initial et trouve si les transitions partant de cet état
 //satisfont toutes (x).
@@ -333,30 +173,41 @@ vector<int> matchVariables(vector<int> recherche )
 //Peut utiliser le même tableau global pour faire la fonction a mémoire ou alors on passe le tableau en paramètre a la fonction
 //Comme ça aucun side effects...
 
-bool all_paths_satisfy(int stateId, vector<int> & satisfy_x)
+
+
+bool all_paths_satisfy(int stateId, vector<int> & memory)
 {
+
+	memory[stateId] = 2;
 
 	//Pour toutes les transitions de cet état
 	for (int i=0; i< fsm[stateId].transitions.size(); i++)
 	{
 		int nextState = fsm[stateId].transitions[i].destinationid;
-		//Si le prochain état est un etat invalide, return false
-		if (satisfy_x[nextState] == 0)
+
+		//Si le prochain etat est deja calcule valide, on return true
+		if (memory[nextState] == COMPLETE_VALID)
+		{
+			continue;
+		}
+
+		//Si le prochain état est un etat invalide OU faux d'avance, return false
+		if (memory[nextState] == INVALID || memory[nextState] == COMPLETE_INVALID)
 		{
 			return false;
 		}
 
 		//Si le prochain état est un état déja visité, on continue a la prochaine transition
-		if (satisfy_x[nextState] == 2)
+		if (memory[nextState] == VISITED)
 		{
 			continue;
 		}
 
 		//Si le prochain état est valide et non visité, on fait un appel récursif
-		if (satisfy_x[nextState] == 1)
+		if (memory[nextState] == VALID)
 		{
-			bool answer = all_paths_satisfy(nextState, satisfy_x);
-			if (answer == true) return true;
+			bool answer = all_paths_satisfy(nextState, memory);
+			if (answer == true) continue;
 			if (answer == false) return false;
 		}
 	}
@@ -369,38 +220,44 @@ bool all_paths_satisfy(int stateId, vector<int> & satisfy_x)
 //Cette fonction fait le travail "All paths, globally x"
 //Prend en paramètre les états acceptants X. La fonction retourne en résultats les états qui valident la propriété
 //All paths, globally x.
-//Input : Table de taille n. Si l'état est présent, 1, sinon 0
-//Output : Table de taille n. Si l'état est présent 1, sinon 0
-vector<int> AG(vector<int> startingStates)
+vector<int> AG(vector<int> states)
 {
 
 	vector<int> results;
-	vector<int> satisfy_x;
+	vector<int> memory;
+	memory.resize(fsm.size() );
 
-	satisfy_x.resize(fsm.size() );
-
-	//On crée le vecteur satisfy_x
-	for (int i = 0; i < startingStates.size(); i++)
+	//On crée le vecteur memory
+	for (int i = 0; i < states.size(); i++)
 	{
-		int state = startingStates[i];
-		satisfy_x[state] == 1;
+		int state = states[i];
+		memory[state] = VALID;
 	}
 
 	//On itère a travers tous les états qui acceptent x.
-	for (int i =0; i<startingStates.size(); i++)
+	for (int i =0; i<states.size(); i++)
 	{
 
-		int currentState = startingStates[i];
-		bool answer = all_paths_satisfy(currentState,satisfy_x);
+		int currentState = states[i];
+		bool answer = all_paths_satisfy(currentState,memory);
 		
-		if (answer == true)
+		if (answer == true) {
 			results.push_back(currentState);
+			memory[currentState] = COMPLETE_VALID; //3 == Complètement calculé, true
+		}
+
+		else {
+			memory[currentState] = COMPLETE_INVALID; //4 == Complètement calculé, false
+		}
 
 	}
 
 	return results;
 
 }
+
+extern void readStates(char * filename);
+extern void readTransitions(char * filename);
 
 int main(void)
 {
@@ -422,6 +279,12 @@ int main(void)
 	recherche[2] = 0;
 
 	vector<int> res = matchVariables(recherche);
+
+	vector<int> result = AG(res);
+
+	vector<int> result2 = AF(result);
+
+	//Pour l'instant les résultats sont bons, encore quelques incertitudes par rapport a AF
 
 
 	return 0;
