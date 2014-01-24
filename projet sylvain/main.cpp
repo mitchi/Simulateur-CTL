@@ -8,6 +8,9 @@ using namespace std;
 
 #include "includes.h"
 
+extern void readStates(char * filename);
+extern void readTransitions(char * filename);
+
 vector<state> fsm;
 
 
@@ -213,13 +216,14 @@ bool all_paths_satisfy(int stateId, vector<int> & memory)
 	}
 
 	//Si on a parcouru toutes les transitions de l'état sans atterir dans un état invalide, on peut retourner true
+	memory[stateId] = COMPLETE_VALID;
 	return true;
 }
 
 
-//Cette fonction fait le travail "All paths, globally x"
+/*Cette fonction fait le travail "All paths, globally x"
 //Prend en paramètre les états acceptants X. La fonction retourne en résultats les états qui valident la propriété
-//All paths, globally x.
+//All paths, globally x.*/
 vector<int> AG(vector<int> states)
 {
 
@@ -256,13 +260,163 @@ vector<int> AG(vector<int> states)
 
 }
 
-extern void readStates(char * filename);
-extern void readTransitions(char * filename);
+
+
+enum AX_ENUM
+{
+
+	AX_INVALID = 0,
+	AX_VALID = 1, //VALID means (o) is true in this state
+	AX_ACCEPT = 2,// ACCEPT means AX (o) is true in this state
+};
+
+//AX recursive function. Temporary name.
+bool axhelper(int stateId, vector<int> & memory)
+{
+
+	//For all the outgoing paths of this state
+	for (int i = 0; i < fsm[stateId].transitions.size(); i++)
+	{
+		int dest = fsm[stateId].transitions[i].destinationid;
+
+		if (memory[dest] == AX_INVALID) {
+			memory[stateId] = AX_INVALID;
+			return false;
+		}
+
+	}
+
+	memory[stateId] = AX_ACCEPT;
+	return true;
+
+
+}
+
+/*
+This function returns the set of states that matches AX ( formula)
+Input : a set of accepting states
+Output : results
+
+A (o) – All: o has to hold on all paths starting from the current state.
+X (o) – Next: o has to hold at the next state (this operator is sometimes noted N instead of X).
+
+*/
+
+//A quicker algorithm to check for this is just to have all the nodes in a few linked lists and check them one by one. 
+//When a sibling node is different than the accepting state, we 
+vector<int> AX(vector<int> states)
+{
+
+	//Let's build the memory structure
+	vector<int> memory;
+	memory.resize(fsm.size() );
+
+	vector<int> results;
+
+	//We input the accepting states into the memory structure
+	for (int i = 0; i < states.size(); i++)
+	{
+		int state = states[i];
+		memory[state] = AX_VALID;
+	}
+
+	//For all the states, we find those who match
+	for (int i=0; i < fsm.size(); i++)
+	{
+
+		bool answer = axhelper(i, memory);
+		if (answer == true)
+			results.push_back(i);
+
+	}
+
+
+return results;
+
+
+}
+
+enum AU_enum
+{
+
+	AU_FIRST = 1, //The state satisfies the first condition
+	AU_SECOND = 2, //the state satisfies the second condition
+
+};
+
+
+
+bool AU_helper(int stateId, vector<int > & memory)
+{
+	
+
+
+
+	return true;
+
+}
+
+
+/*
+Input : set of states for the first condition, set of states for the second condition
+output : the states that satisfy these constraints
+*/
+
+vector<int> AU(vector<int> first, vector<int> second)
+{
+
+	vector<int> results;
+	vector<int> memory;
+	memory.resize(fsm.size());
+
+
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+		memory[state] = AU_FIRST;
+	}
+
+	for (int i = 0; i < second.size(); i++)
+	{
+		int state = second[i];
+		memory[state] = AU_SECOND;
+	}
+
+	//The memory is now filled with states that satisfy either first or second condition
+	//We can now iterate through all the states and find the ones that satisfy
+
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+		
+
+
+	}
+
+
+
+	return results;
+
+}
+
+
+
+
+
+
+
+
+
 
 int main(void)
 {
 
 	//Done
+
+	//AX AG AF AU AW
+	//EX EG EF EU EW
+
+	
 	readStates("states.txt");
 
 	readTransitions("transitions.txt");
@@ -285,6 +439,14 @@ int main(void)
 	vector<int> result2 = AF(result);
 
 	//Pour l'instant les résultats sont bons, encore quelques incertitudes par rapport a AF
+
+
+	//Calculer AX (y)
+	vector<int> input;
+	input.push_back(0);
+	input.push_back(4);input.push_back(2);input.push_back(1);
+
+	vector<int> resax = AX(input);
 
 
 	return 0;
