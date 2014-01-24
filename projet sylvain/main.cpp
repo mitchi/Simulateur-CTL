@@ -341,17 +341,33 @@ enum AU_enum
 
 	AU_FIRST = 1, //The state satisfies the first condition
 	AU_SECOND = 2, //the state satisfies the second condition
-
+	AU_ACCEPT = 3, //Not used since using AU_SECOND works as well
 };
 
 
 
 bool AU_helper(int stateId, vector<int > & memory)
 {
+
+	//Condition de sortie : on a atteint un état qui satisfait la seconde condition ou un etat qui accept deja
+	if (memory[stateId] > AU_FIRST )
+		return true;
+
+	//Le reste des cas
+	if (memory[stateId] != AU_FIRST)
+		return false;
+
 	
+	//Pour tous les transitions de cet état. Chaque transition doit retourner true pour que l'état soit validé
+	for (int i = 0; i < fsm[stateId].transitions.size(); i++)
+	{
+		int destination = fsm[stateId].transitions[i].destinationid;
+		bool answer = AU_helper(destination, memory);
+		if (answer == false) return false;
+	}
 
-
-
+	//Use the memory to save this calculation
+	memory[stateId] = AU_ACCEPT;
 	return true;
 
 }
@@ -369,7 +385,7 @@ vector<int> AU(vector<int> first, vector<int> second)
 	vector<int> memory;
 	memory.resize(fsm.size());
 
-
+	//Init the memory data structure
 	for (int i = 0; i < first.size(); i++)
 	{
 		int state = first[i];
@@ -383,14 +399,22 @@ vector<int> AU(vector<int> first, vector<int> second)
 	}
 
 	//The memory is now filled with states that satisfy either first or second condition
-	//We can now iterate through all the states and find the ones that satisfy
+	//We can now iterate through all the states that satisfy the first condition and decide 
+	//whether or not they hold until the second condition
 
 	for (int i = 0; i < first.size(); i++)
 	{
 		int state = first[i];
-		
 
+		//These states have already been calculated with the recursivity
+		if (memory[state] == AU_ACCEPT) {
+			results.push_back(state);
+			continue;
+		}
 
+		bool answer = AU_helper(state, memory);
+		if (answer == true)
+			results.push_back(state);
 	}
 
 
@@ -399,15 +423,6 @@ vector<int> AU(vector<int> first, vector<int> second)
 
 }
 
-
-
-
-
-
-
-
-
-
 int main(void)
 {
 
@@ -415,6 +430,9 @@ int main(void)
 
 	//AX AG AF AU AW
 	//EX EG EF EU EW
+
+	//TODO
+	//AW EU EW EX (just a couple more!!)
 
 	
 	readStates("states.txt");
@@ -448,9 +466,21 @@ int main(void)
 
 	vector<int> resax = AX(input);
 
+	//Testons AU
+	vector<int> firststates;
+	vector<int> secondstates;
+
+	firststates.push_back(0);firststates.push_back(2);firststates.push_back(4);firststates.push_back(1);
+
+	//cas plus dur
+	firststates.push_back(7);
+
+	secondstates.push_back(5);
+
+	vector<int> resau = AU(firststates, secondstates);
+
 
 	return 0;
-
 
 }
 
