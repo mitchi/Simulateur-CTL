@@ -423,16 +423,65 @@ vector<int> AU(vector<int> first, vector<int> second)
 
 }
 
+
+enum EX_ENUM
+{
+
+	EX_VALID = 1,
+};
+
+//Find the states that have the property : Some paths lead to o formula
+//Input : states that accept the rightside formula (o)
+//Output : a vector of states that satisfy the whole formula (EX o)
+vector<int> EX(vector<int> states)
+{
+
+	//Let's build the memory structure
+	vector<int> memory;
+	memory.resize(fsm.size() );
+	vector<int> results;
+
+	//We input the accepting states into the memory structure
+	for (int i = 0; i < states.size(); i++)
+	{
+		int state = states[i];
+		memory[state] = EX_VALID;
+	}
+
+
+	//For all the states
+	for (int i = 0; i < fsm.size() ; i++)
+	{
+		int state = i;
+
+		//For all the transitions, find if there's a transition to a valid state
+		for (int j = 0; j < fsm[state].transitions.size(); j++)
+		{
+			int destination = fsm[state].transitions[j].destinationid;
+			if (memory[destination] == EX_VALID) {
+				results.push_back(state);
+				break; //we don't want to do the others after
+			}
+
+		}
+
+	}
+
+	return results;
+
+}
+
+
+
 int main(void)
 {
 
-	//Done
 
 	//AX AG AF AU AW
 	//EX EG EF EU EW
 
 	//TODO
-	//AW EU EW EX (just a couple more!!)
+	//AW EU EW (just a couple more!!)
 
 	
 	readStates("states.txt");
@@ -478,6 +527,13 @@ int main(void)
 	secondstates.push_back(5);
 
 	vector<int> resau = AU(firststates, secondstates);
+
+	//Let's test EX
+	vector<int> inputex;
+	inputex.push_back(5);
+	vector<int> resex = EX(inputex);
+
+	//EX MARCHE (easy)
 
 
 	return 0;
