@@ -433,6 +433,7 @@ enum EX_ENUM
 //Find the states that have the property : Some paths lead to o formula
 //Input : states that accept the rightside formula (o)
 //Output : a vector of states that satisfy the whole formula (EX o)
+//This function does not need a helper function since it's not recursive
 vector<int> EX(vector<int> states)
 {
 
@@ -473,9 +474,102 @@ vector<int> EX(vector<int> states)
 
 
 
-int main(void)
+
+
+
+enum AW_enum
 {
 
+	AW_FIRST = 1, //The state satisfies the first condition
+	AW_SECOND = 2, //the state satisfies the second condition
+	AW_ACCEPT = 3, //Not used since using AW_SECOND works as well
+};
+
+
+
+bool AW_helper(int stateId, vector<int > & memory)
+{
+
+	//Si on atteint le second, on return true tout de suite
+	if (memory[stateId] == AW_SECOND)
+		return true;
+
+	//Condition de sortie : Si on atteint autre chose que FIRST OU SECOND, return false
+	if (memory[stateId] != AW_FIRST  && memory[stateId] != AW_SECOND )
+		return false;
+
+	//Pour tous les transitions de cet état. Chaque transition doit retourner true pour que l'état soit validé
+	for (int i = 0; i < fsm[stateId].transitions.size(); i++)
+	{
+		int destination = fsm[stateId].transitions[i].destinationid;
+		bool answer = AW_helper(destination, memory);
+		if (answer == false) return false;
+	}
+
+	//Use the memory to save this calculation
+	memory[stateId] = AW_ACCEPT;
+	return true;
+
+}
+
+
+/*
+Input : set of states for the first condition, set of states for the second condition
+output : the states that satisfy these constraints
+*/
+
+vector<int> AW(vector<int> first, vector<int> second)
+{
+
+	vector<int> results;
+	vector<int> memory;
+	memory.resize(fsm.size());
+
+	//Init the memory data structure
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+		memory[state] = AW_FIRST;
+	}
+
+	for (int i = 0; i < second.size(); i++)
+	{
+		int state = second[i];
+		memory[state] = AW_SECOND;
+	}
+
+	//The memory is now filled with states that satisfy either first or second condition
+	//We can now iterate through all the states that satisfy the first condition and decide 
+	//whether or not they hold until the second condition
+	//Weak until difference : they don't have to hold until a second condition
+
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+
+		//These states have already been calculated with the recursivity
+		if (memory[state] == AW_ACCEPT) {
+			results.push_back(state);
+			continue;
+		}
+
+		bool answer = AW_helper(state, memory);
+		if (answer == true)
+			results.push_back(state);
+	}
+
+
+
+	return results;
+
+}
+
+
+
+
+
+void batterie_tests1(void)
+{
 
 	//AX AG AF AU AW
 	//EX EG EF EU EW
@@ -535,6 +629,32 @@ int main(void)
 
 	//EX MARCHE (easy)
 
+
+
+}
+
+void batterie_tests2(void)
+{
+
+
+	readStates("states_rougenoir.txt");
+
+	readTransitions("transitions_rougenoir.txt");
+
+
+}
+
+
+
+
+//BATTERIE TESTS1
+int main(void)
+{
+
+	batterie_tests2();
+
+
+	//Let's test weak until now (copy paste of until, just remove one exit condition)
 
 	return 0;
 

@@ -1,0 +1,26 @@
+# Pour tester p AU q et les exemples du genre
+#
+#image voir :
+#http://www.inf.ed.ac.uk/teaching/courses/propm/papers/CTL.pdf
+
+#variables : NOIR ROUGE
+
+0, S0, {1,0}
+1, S1, {1,0}
+2, S2, {1,0}
+3, S3, {1,0}
+4, S4, {0,1}
+5, S5, {0,1}
+6, S6, {1,0}
+7, S7, {0,1}
+8, S8, {1,0}
+9, S9, {0,0}
+10, S10, {0,0}
+11, S11, {1,0}
+12, S12, {0,1}
+13, S13, {0,1}
+14, S14, {0,0}
+15, S15, {0,1}
+16, S16, {0,0}
+17, S17, {0,0}
+18, S18, {0,0}

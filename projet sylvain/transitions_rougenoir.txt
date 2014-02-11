@@ -1,0 +1,26 @@
+# les transitions du fsm
+# coin = 0, selection = 1, brew = 2
+
+# syntaxe :
+# source destination nom
+
+# s1 vers s2
+0,1, 
+0,2, 
+0,3,
+1,4,
+1,5,
+2,6,
+3,7,
+3,8,
+4,9,
+5,10,
+6,11,
+6,12,
+8,13,
+9,14,
+11,15,
+13,16,
+13,17,
+13,18,
+
