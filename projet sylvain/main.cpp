@@ -641,6 +641,56 @@ void batterie_tests2(void)
 
 	readTransitions("transitions_rougenoir.txt");
 
+	//Maintenant faisons un test sur rouge noir
+
+	//On veut trouver tous les états qui sont NOIR
+	//Need initializer list pls
+	vector<int> noir; noir.resize(2); noir[0] = 1; noir[1] = 0;
+	vector<int> rouge; rouge.resize(2); rouge[0] = 0; rouge[1] = 1;
+
+
+	vector<int> resultats_noir = matchVariables(noir);
+	vector<int> resultats_rouge = matchVariables(rouge);
+
+	//Testons maintenant AU
+	vector<int> resultats_AU = AU(resultats_noir, resultats_rouge);
+
+	//Testons maintenant AW, meme resultats normalement
+	vector<int> resultats_AW = AW(resultats_noir, resultats_rouge);
+
+
+	//Modifions maintenant légèrement l'exemple pour AU. Nous allons mettre le noeud 4 en blanc
+	//et normalement cela fait en sorte que le noeud 1 ne peut plus accepter.
+
+	fsm[4].variables[0] = 0;
+	fsm[4].variables[1] = 0;
+
+	resultats_noir = matchVariables(noir);
+	resultats_rouge = matchVariables(rouge);
+
+	//Testons maintenant AU
+	resultats_AU = AU(resultats_noir, resultats_rouge);
+
+	//Marche comme prevu, 1 n'est plus accepté
+
+	//Testons AW en coloriant l'arbre de gauche (4-5-9-10-14) en noir
+	fsm[4].variables[0] = 1; fsm[4].variables[1] = 0;
+	fsm[5].variables[0] = 1; fsm[5].variables[1] = 0;
+	fsm[9].variables[0] = 1; fsm[9].variables[1] = 0;
+	fsm[10].variables[0] = 1; fsm[10].variables[1] = 0;
+	fsm[14].variables[0] = 1; fsm[14].variables[1] = 0;
+
+	resultats_noir = matchVariables(noir);
+	resultats_rouge = matchVariables(rouge);
+
+	//Testons maintenant AW (bcp de noeuds peuvent accepter maintenant)
+
+	resultats_AW = AW(resultats_noir, resultats_rouge);
+	
+
+
+
+	int u = 2+2; //pause
 
 }
 
