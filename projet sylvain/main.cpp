@@ -1,3 +1,5 @@
+//EDMOND LA CHANCE UQAC 2014
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
@@ -13,7 +15,26 @@ extern void readTransitions(char * filename);
 
 vector<state> fsm;
 
+/* NOTES
 
+La plupart des opérateurs de CTL sont des fonctions récursives qui sont dynamisables, c'est a dire qu'on risque 
+de repasser sur des solutions déja calculées alors on fait la bonne chose et on les enregistre a mesure.
+Il est utile de voir des exemples avec des graphes et non des arbres pour s'en rendre compte.
+Les arbres peuvent être parcourus sans répétition contrairement aux graphes
+
+*/
+
+
+
+/*
+Todo : En ce moment ce programme est limité a une seule FSM car la FSM est une variable globale du module main.obj.
+2 options sont possibles si c'est un problème :
+1.Copier coller tout le code et faire un objet avec. Si simple!
+2.Rajouter un paramètre supplémentaire FSM a toutes les fonctions... Bof
+Ou 3. Laisser ça comme ça :)
+*/
+
+//Shortcut utile sur VS2008 CTRL+M+O (collapse all)
 /*
 
 Fonction de recherche
@@ -568,6 +589,203 @@ vector<int> AW(vector<int> first, vector<int> second)
 
 
 
+
+enum EU_enum
+{
+
+	EU_FIRST = 1, //The state satisfies the first condition
+	EU_SECOND = 2, //the state satisfies the second condition
+	EU_ACCEPT = 3, //Not used since using AU_SECOND works as well
+};
+
+
+
+bool EU_helper(int stateId, vector<int > & memory)
+{
+
+	//Condition de sortie : on a atteint un état qui satisfait la seconde condition ou un etat qui accept deja
+	if (memory[stateId] > EU_FIRST )
+		return true;
+
+	//Le reste des cas
+	if (memory[stateId] != EU_FIRST)
+		return false;
+
+	//Donc si c'est EU_FIRST ON CONTINUE ICI
+	
+	//Pour tous les transitions de cet état. Une seule! transition doit retourner true pour que l'état soit validé
+	for (int i = 0; i < fsm[stateId].transitions.size(); i++)
+	{
+		int destination = fsm[stateId].transitions[i].destinationid;
+		bool answer = EU_helper(destination, memory);
+		if (answer == true) 
+		{
+			//On sauve la reponse dans la memoire
+			memory[stateId] = EU_ACCEPT;
+			return true;
+		}
+	}
+
+	//Si après avoir fait toutes les transitions on n'a pas eu un vrai, on retourne faux
+	return false;
+
+}
+
+
+/*
+Input : set of states for the first condition, set of states for the second condition
+output : the states that satisfy these constraints
+*/
+
+vector<int> EU(vector<int> first, vector<int> second)
+{
+
+	vector<int> results;
+	vector<int> memory;
+	memory.resize(fsm.size());
+
+	//Init the memory data structure
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+		memory[state] = EU_FIRST;
+	}
+
+	for (int i = 0; i < second.size(); i++)
+	{
+		int state = second[i];
+		memory[state] = EU_SECOND;
+	}
+
+	//The memory is now filled with states that satisfy either first or second condition (or other)
+	//We can now iterate through all the states that satisfy the first condition and decide 
+	//whether or not they hold until the second condition
+
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+
+		//These states have already been calculated with the recursivity
+		if (memory[state] == EU_ACCEPT) {
+			results.push_back(state);
+			continue;
+		}
+
+		bool answer = EU_helper(state, memory);
+		if (answer == true)
+			results.push_back(state);
+	}
+
+
+
+	return results;
+
+}
+
+
+
+
+
+enum EW_enum
+{
+
+	EW_FIRST = 1, //The state satisfies the first condition
+	EW_SECOND = 2, //the state satisfies the second condition
+	EW_ACCEPT = 3, //Not used since using AU_SECOND works as well
+};
+
+
+//TODO : reflechir a la condition de sortie avec le noir
+
+bool EW_helper(int stateId, vector<int > & memory)
+{
+
+	//Condition de sortie : on a atteint un état qui satisfait la seconde condition ou un etat qui accept deja
+	if (memory[stateId] > EW_FIRST )
+		return true;
+
+	//Le reste des cas
+	if (memory[stateId] != EW_FIRST)
+		return false;
+
+	//Cas rare : a tester plus
+	if (memory[stateId] == EW_FIRST && fsm[stateId].transitions.size() == 0)
+		return true;
+
+	//Donc si c'est EW_FIRST ON CONTINUE ICI
+	
+	//Pour tous les transitions de cet état. Une seule transition doit retourner true pour que l'état soit validé
+	for (int i = 0; i < fsm[stateId].transitions.size(); i++)
+	{
+		int destination = fsm[stateId].transitions[i].destinationid;
+		bool answer = EW_helper(destination, memory);
+		if (answer == true) 
+		{
+			//On sauve la reponse dans la memoire
+			memory[stateId] = EW_ACCEPT;
+			return true;
+		}
+	}
+
+	//Si après avoir fait toutes les transitions on n'a pas eu un vrai, on retourne faux
+	return false;
+
+}
+
+
+/*
+Input : set of states for the first condition, set of states for the second condition
+output : the states that satisfy these constraints
+*/
+
+vector<int> EW(vector<int> first, vector<int> second)
+{
+
+	vector<int> results;
+	vector<int> memory;
+	memory.resize(fsm.size());
+
+	//Init the memory data structure
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+		memory[state] = EW_FIRST;
+	}
+
+	for (int i = 0; i < second.size(); i++)
+	{
+		int state = second[i];
+		memory[state] = EW_SECOND;
+	}
+
+	//The memory is now filled with states that satisfy either first or second condition (or other)
+	//We can now iterate through all the states that satisfy the first condition and decide 
+	//whether or not they hold until the second condition
+
+	for (int i = 0; i < first.size(); i++)
+	{
+		int state = first[i];
+
+		//These states have already been calculated with the recursivity
+		if (memory[state] == EW_ACCEPT) {
+			results.push_back(state);
+			continue;
+		}
+
+		bool answer = EW_helper(state, memory);
+		if (answer == true)
+			results.push_back(state);
+	}
+
+
+
+	return results;
+
+}
+
+
+
+
 void batterie_tests1(void)
 {
 
@@ -575,7 +793,7 @@ void batterie_tests1(void)
 	//EX EG EF EU EW
 
 	//TODO
-	//AW EU EW (just a couple more!!)
+	// EU EW (just a couple more!!)
 
 	
 	readStates("states.txt");
@@ -686,9 +904,21 @@ void batterie_tests2(void)
 	//Testons maintenant AW (bcp de noeuds peuvent accepter maintenant)
 
 	resultats_AW = AW(resultats_noir, resultats_rouge);
+
+	//essai EU
+
+	//Modifions les noeuds 1 et 2 pour que leurs chemins soient invalides
+	fsm[1].variables[0] = 0; fsm[1].variables[1] = 0;
+	fsm[2].variables[0] = 0; fsm[2].variables[1] = 0;
+
+	resultats_noir = matchVariables(noir);
+	resultats_rouge = matchVariables(rouge);
+
+	//On teste
+	vector<int> resultats_EU = EU(resultats_noir, resultats_rouge);
+
+	//marche bien!
 	
-
-
 
 	int u = 2+2; //pause
 
