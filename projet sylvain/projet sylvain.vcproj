@@ -46,7 +46,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -187,7 +187,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\states_rougenoir.txt"
+				>
+			</File>
+			<File
 				RelativePath=".\transitions.txt"
+				>
+			</File>
+			<File
+				RelativePath=".\transitions_rougenoir.txt"
 				>
 			</File>
 		</Filter>

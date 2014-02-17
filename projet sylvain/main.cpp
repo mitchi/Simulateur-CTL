@@ -53,6 +53,47 @@ Résultat = un vecteur d'états.
 
 */
 
+
+//Simple output de la FSM.
+//On output avec les # des états et non les noms des états
+void output_full_graph()
+{
+
+	//Header
+
+	FILE * output = fopen("truc.dot","w");
+	
+	//Ouverture
+	fprintf(output, "digraph G {\n" );
+
+	//Transitions des états
+	for (int i=0; i < fsm.size(); i++) 
+	{
+			//toutes les transitions
+		for (int j=0; j < fsm[i].transitions.size(); j++)
+		{
+			int destination = fsm[i].transitions[j].destinationid;
+
+			fprintf(output, "%d -> %d;\n", i, destination);
+
+		}
+
+	}
+
+
+	//Fermeture
+	fprintf(output, "}\n");
+
+	fclose(output);
+
+}
+
+
+
+
+
+
+
 //This utility function takes a vector of results and outputs an array for dynamic programming
 //The states that accept are tagged properly according to the enum (1 = accept)
 vector<int> make_dp_array_from_results(vector<int> results)
@@ -114,7 +155,7 @@ enum AF_enum
 };
 
 //Recursive function
-bool all_paths_finally_satisfy(int stateId, vector<int> & memory)
+bool AF_helper(int stateId, vector<int> & memory)
 {
 	
 	if (memory[stateId] == AF_ACCEPT)
@@ -135,7 +176,7 @@ bool all_paths_finally_satisfy(int stateId, vector<int> & memory)
 
 		int nextState = fsm[stateId].transitions[i].destinationid;
 		
-		bool answer = all_paths_finally_satisfy(nextState, memory);
+		bool answer = AF_helper(nextState, memory);
 		if (answer == false) return false; //on sort de cette branche immédiatement si le parcours récursif trouve une réponse fausse
 
 	}
@@ -176,7 +217,7 @@ vector<int> AF(vector<int> states)
 		if (memory[i] == AF_INVALID)
 			continue;
 
-		bool answer = all_paths_finally_satisfy(i, memory);
+		bool answer = AF_helper(i, memory);
 
 		if (answer == false)
 			memory[i] = AF_INVALID;
@@ -199,7 +240,7 @@ vector<int> AF(vector<int> states)
 
 
 
-bool all_paths_satisfy(int stateId, vector<int> & memory)
+bool AG_helper(int stateId, vector<int> & memory)
 {
 
 	memory[stateId] = 2;
@@ -230,7 +271,7 @@ bool all_paths_satisfy(int stateId, vector<int> & memory)
 		//Si le prochain état est valide et non visité, on fait un appel récursif
 		if (memory[nextState] == VALID)
 		{
-			bool answer = all_paths_satisfy(nextState, memory);
+			bool answer = AG_helper(nextState, memory);
 			if (answer == true) continue;
 			if (answer == false) return false;
 		}
@@ -264,7 +305,7 @@ vector<int> AG(vector<int> states)
 	{
 
 		int currentState = states[i];
-		bool answer = all_paths_satisfy(currentState,memory);
+		bool answer = AG_helper(currentState,memory);
 		
 		if (answer == true) {
 			results.push_back(currentState);
@@ -292,7 +333,7 @@ enum AX_ENUM
 };
 
 //AX recursive function. Temporary name.
-bool axhelper(int stateId, vector<int> & memory)
+bool AX_helper(int stateId, vector<int> & memory)
 {
 
 	//For all the outgoing paths of this state
@@ -345,7 +386,7 @@ vector<int> AX(vector<int> states)
 	for (int i=0; i < fsm.size(); i++)
 	{
 
-		bool answer = axhelper(i, memory);
+		bool answer = AX_helper(i, memory);
 		if (answer == true)
 			results.push_back(i);
 
@@ -878,7 +919,7 @@ void batterie_tests2(void)
 
 
 	//Modifions maintenant légèrement l'exemple pour AU. Nous allons mettre le noeud 4 en blanc
-	//et normalement cela fait en sorte que le noeud 1 ne peut plus accepter.
+	//et normalement cela fait en sorte que le noeud 1 et 0 ne peuvent plus accepter.
 
 	fsm[4].variables[0] = 0;
 	fsm[4].variables[1] = 0;
@@ -888,6 +929,8 @@ void batterie_tests2(void)
 
 	//Testons maintenant AU
 	resultats_AU = AU(resultats_noir, resultats_rouge);
+
+	//Sortir les resultats en graphique
 
 	//Marche comme prevu, 1 n'est plus accepté
 
@@ -918,6 +961,8 @@ void batterie_tests2(void)
 	vector<int> resultats_EU = EU(resultats_noir, resultats_rouge);
 
 	//marche bien!
+
+	output_full_graph();
 	
 
 	int u = 2+2; //pause
